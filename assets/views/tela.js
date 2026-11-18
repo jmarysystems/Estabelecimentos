@@ -6,15 +6,23 @@ const CONFIG = {
   "modulo": "estabelecimento",
   "singular": "estabelecimento",
   "ordem": "nome",
-  "filtro": "Nome ou código",
+  "filtro": "Nome, CNPJ ou cidade",
   "colunas": [
-    { "campo": "nome", "rotulo": "Nome" },
-    { "campo": "codigo", "rotulo": "Código", "classe": "mono" },
+    { "campo": "nome", "rotulo": "Razão social" },
+    { "campo": "cnpj_cpf", "rotulo": "CNPJ/CPF", "classe": "mono" },
+    { "campo": "cidade", "rotulo": "Cidade" },
+    { "campo": "whatsapp", "rotulo": "WhatsApp" },
     { "campo": "ativa", "rotulo": "Ativo" }
   ],
   "campos": [
-    { "campo": "nome", "rotulo": "Nome", "obrigatorio": true },
-    { "campo": "codigo", "rotulo": "Código" },
+    { "campo": "nome", "rotulo": "Razão social", "obrigatorio": true },
+    { "campo": "nome_fantasia", "rotulo": "Nome fantasia" },
+    { "campo": "cnpj_cpf", "rotulo": "CNPJ/CPF" },
+    { "campo": "contato_nome", "rotulo": "Contato" },
+    { "campo": "email", "rotulo": "E-mail", "tipo": "email" },
+    { "campo": "whatsapp", "rotulo": "WhatsApp" },
+    { "campo": "cidade", "rotulo": "Cidade" },
+    { "campo": "estado", "rotulo": "Estado" },
     { "campo": "ativa", "rotulo": "Ativo", "tipo": "check" }
   ]
 };
