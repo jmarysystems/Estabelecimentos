@@ -8,6 +8,7 @@ const CONFIG = {
   "ordem": "nome",
   "filtro": "Nome, CNPJ ou cidade",
   "cep": true,
+  "cnpj": true,
   "colunas": [
     { "campo": "nome", "rotulo": "Razão social" },
     { "campo": "cnpj_cpf", "rotulo": "CNPJ/CPF", "classe": "mono" },
@@ -24,6 +25,22 @@ const CONFIG = {
     { "campo": "whatsapp", "rotulo": "WhatsApp" },
     { "campo": "codigo", "rotulo": "Código" },
     { "campo": "ativa", "rotulo": "Ativo", "tipo": "check" },
+
+    { "campo": "regime_tributario", "rotulo": "Regime tributário", "aba": "Fiscal",
+      "tipo": "opcoes", "vazio": "Selecione",
+      "opcoes": [
+        { "valor": "", "rotulo": "Selecione" },
+        { "valor": "0 - Simples Nacional", "rotulo": "0 - Simples Nacional" },
+        { "valor": "1 - Lucro Real", "rotulo": "1 - Lucro Real" },
+        { "valor": "2 - Lucro Presumido", "rotulo": "2 - Lucro Presumido" },
+        { "valor": "3 - Simples Nacional - excesso de sublimite", "rotulo": "3 - Simples Nacional - excesso de sublimite" }
+      ] },
+    { "campo": "cnae_principal", "rotulo": "CNAE principal", "aba": "Fiscal" },
+    { "campo": "cnae_descricao", "rotulo": "Descrição do CNAE", "aba": "Fiscal" },
+    { "campo": "certificado", "rotulo": "Certificado digital (.pfx / .p12)", "aba": "Fiscal",
+      "tipo": "arquivo", "bucket": "certificados",
+      "colunas": { "nome": "certificado_nome", "caminho": "certificado_caminho",
+                   "enviado": "certificado_enviado_em" } },
 
     { "campo": "cep", "rotulo": "CEP", "aba": "Localização" },
     { "campo": "nome_endereco", "rotulo": "Nome da rua / avenida", "aba": "Localização" },

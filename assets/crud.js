@@ -1,5 +1,5 @@
 // Tela genérica de cadastro: lista, filtro, abas, formulário e exclusão.
-import { listar, criar, atualizar, excluir } from './api.js';
+import { sb, listar, criar, atualizar, excluir } from './api.js';
 import * as ui from './ui.js';
 
 const rotuloDe = (listas, de, id) => {
@@ -85,6 +85,13 @@ export async function render(raiz, ctx, cfg) {
             i.id === valor ? 'selected' : ''}>${ui.esc(i[c.de.rotulo])}</option>`).join('')}
         </select></label>`;
     }
+    if (c.tipo === 'arquivo') {
+      const atual = registro[c.colunas?.nome || c.campo];
+      return `<label class="campo"><span>${ui.esc(c.rotulo)}${c.obrigatorio ? ' *' : ''}</span>
+        <input type="file" name="${ui.esc(c.campo)}" data-arquivo="${ui.esc(c.campo)}">
+        <small class="sub">${atual ? `Arquivo atual: ${ui.esc(atual)}` : 'Nenhum arquivo enviado'}</small>
+      </label>`;
+    }
     if (c.tipo === 'check') {
       return `<label class="campo"><span>${ui.esc(c.rotulo)}</span>
         <input type="checkbox" name="${ui.esc(c.campo)}" ${valor ? 'checked' : ''}></label>`;
@@ -113,11 +120,16 @@ export async function render(raiz, ctx, cfg) {
 
     const paineis = abas.map((aba, indice) => {
       const campos = cfg.campos.filter((c) => (c.aba || 'Dados') === aba);
-      const buscaCep = cfg.cep && campos.some((c) => c.campo === 'cep')
-        ? '<div class="linha-acoes" style="margin-bottom:12px">'
-          + '<button type="button" class="botao-pequeno" id="busca-cep">'
-          + '🔎 Pesquisar endereço</button>'
-          + '<span class="sub" id="cep-info"></span></div>'
+      const temCep = cfg.cep && campos.some((c) => c.campo === 'cep');
+      const temCnpj = cfg.cnpj && campos.some((c) => c.campo === 'cnpj_cpf');
+      const botoes = [];
+      if (temCnpj) botoes.push('<button type="button" class="botao-pequeno" id="busca-cnpj">'
+        + '🏢 Buscar dados pelo CNPJ</button><span class="sub" id="cnpj-info"></span>');
+      if (temCep) botoes.push('<button type="button" class="botao-pequeno" id="busca-cep">'
+        + '🔎 Pesquisar endereço</button><span class="sub" id="cep-info"></span>');
+      const buscaCep = botoes.length
+        ? '<div class="linha-acoes" style="margin-bottom:12px;flex-wrap:wrap">'
+          + botoes.join('') + '</div>'
         : '';
       return `<section data-painel="${ui.esc(aba)}" ${indice === 0 ? '' : 'hidden'}>
         ${buscaCep}
@@ -222,6 +234,49 @@ export async function render(raiz, ctx, cfg) {
       }
     }
 
+    async function buscarCnpj() {
+      const bruto = (campo('cnpj_cpf')?.value || '').replace(/\D/g, '');
+      const info = corpo.querySelector('#cnpj-info');
+      if (bruto.length !== 14) {
+        ui.toast('Informe um CNPJ com 14 dígitos.', 'erro');
+        return;
+      }
+      if (info) info.textContent = 'Consultando…';
+
+      try {
+        const resp = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${bruto}`);
+        if (!resp.ok) throw new Error('CNPJ não encontrado.');
+        const d = await resp.json();
+
+        preencher('razao_social', d.razao_social);
+        preencher('nome_fantasia', d.nome_fantasia);
+        preencher('cep', d.cep ? String(d.cep).replace(/^(\d{5})(\d{3})$/, '$1-$2') : null);
+        preencher('nome_endereco',
+          [d.descricao_tipo_de_logradouro, d.logradouro].filter(Boolean).join(' '));
+        preencher('numero', d.numero);
+        preencher('complemento', d.complemento);
+        preencher('bairro', d.bairro);
+        preencher('cidade', d.municipio);
+        preencher('estado', UFS[d.uf] || d.uf);
+        preencher('sigla_estado', d.uf);
+        preencher('codigo_ibge_municipio', d.codigo_municipio_ibge);
+        preencher('sigla_pais', 'BR');
+        preencher('codigo_ibge_pais', '76');
+        preencher('nome_pais', 'Brasil');
+        preencher('pais', 'Brasil');
+        if (d.cnae_fiscal) preencher('cnae_principal', String(d.cnae_fiscal));
+        preencher('cnae_descricao', d.cnae_fiscal_descricao);
+        if (d.opcao_pelo_simples) preencher('regime_tributario', '0 - Simples Nacional');
+
+        if (info) info.textContent = `${d.razao_social || ''} — preenchido pelo CNPJ.`;
+        ui.toast('Dados do CNPJ preenchidos.');
+      } catch (erro) {
+        if (info) info.textContent = 'Não foi possível consultar o CNPJ.';
+        ui.toast(erro.message, 'erro');
+      }
+    }
+
+    corpo.querySelector('#busca-cnpj')?.addEventListener('click', buscarCnpj);
     corpo.querySelector('#busca-cep')?.addEventListener('click', buscarCep);
 
     corpo.querySelector('#cancelar').addEventListener('click', fechar);
@@ -246,8 +301,29 @@ export async function render(raiz, ctx, cfg) {
       }
 
       try {
-        if (editando) await atualizar(cfg.tabela, registro.id, valores);
-        else await criar(cfg.tabela, { ...valores, ...(cfg.extra || {}) });
+        let salvo;
+        if (editando) salvo = await atualizar(cfg.tabela, registro.id, valores);
+        else salvo = await criar(cfg.tabela, { ...valores, ...(cfg.extra || {}) });
+
+        // upload de arquivos (ex.: certificado digital)
+        for (const c of cfg.campos) {
+          if (c.tipo !== 'arquivo') continue;
+          const input = ev.target.querySelector(`[name="${c.campo}"]`);
+          const arquivo = input && input.files && input.files[0];
+          if (!arquivo) continue;
+
+          const caminho = `${salvo.id}/${Date.now()}_${arquivo.name.replace(/[^\w.\-]/g, '_')}`;
+          const { error: erroUp } = await sb.storage.from(c.bucket || 'certificados')
+            .upload(caminho, arquivo, { upsert: true });
+          if (erroUp) throw new Error(erroUp.message);
+
+          await atualizar(cfg.tabela, salvo.id, {
+            [c.colunas?.nome || 'certificado_nome']: arquivo.name,
+            [c.colunas?.caminho || 'certificado_caminho']: caminho,
+            [c.colunas?.enviado || 'certificado_enviado_em']: new Date().toISOString(),
+          });
+        }
+
         fechar();
         ui.toast(editando ? 'Registro atualizado.' : 'Registro cadastrado.');
         ctx.recarregar();
