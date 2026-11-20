@@ -1,5 +1,5 @@
 // Tela genérica de cadastro: lista, filtro, abas, formulário e exclusão.
-import { sb, listar, criar, atualizar, excluir } from './api.js';
+import { sb, listar, criar, atualizar, excluir, rpc } from './api.js';
 import * as ui from './ui.js';
 
 const rotuloDe = (listas, de, id) => {
@@ -84,6 +84,13 @@ export async function render(raiz, ctx, cfg) {
           ${itens.map((i) => `<option value="${ui.esc(i.id)}" ${
             i.id === valor ? 'selected' : ''}>${ui.esc(i[c.de.rotulo])}</option>`).join('')}
         </select></label>`;
+    }
+    if (c.tipo === 'cofre') {
+      return `<label class="campo"><span>${ui.esc(c.rotulo)}</span>
+        <input type="password" name="${ui.esc(c.campo)}"
+               placeholder="senha do certificado (guardada cifrada no cofre)">
+        <small class="sub" id="cofre-status">verificando…</small>
+      </label>`;
     }
     if (c.tipo === 'arquivo') {
       const atual = registro[c.colunas?.nome || c.campo];
@@ -280,6 +287,22 @@ export async function render(raiz, ctx, cfg) {
       }
     }
 
+    const campoCofre = cfg.campos.find((c) => c.tipo === 'cofre');
+    if (campoCofre) {
+      const status = corpo.querySelector('#cofre-status');
+      if (editando) {
+        rpc('certificado_senha_existe', { p_loja_id: registro.id })
+          .then((existe) => {
+            if (status) status.textContent = existe
+              ? '✅ senha já guardada no cofre'
+              : 'nenhuma senha guardada';
+          })
+          .catch(() => { if (status) status.textContent = ''; });
+      } else if (status) {
+        status.textContent = 'será guardada ao cadastrar';
+      }
+    }
+
     corpo.querySelector('#busca-cnpj')?.addEventListener('click', buscarCnpj);
     corpo.querySelector('#busca-cep')?.addEventListener('click', buscarCep);
 
@@ -339,6 +362,15 @@ export async function render(raiz, ctx, cfg) {
             certificado_validade: validade,
             certificado_enviado_por: ctx.perfil?.id || null,
           });
+        }
+
+        // senha do certificado no cofre (nunca volta para a tela)
+        if (campoCofre) {
+          const senhaEl = ev.target.querySelector(`[name="${campoCofre.campo}"]`);
+          const senha = senhaEl ? senhaEl.value : '';
+          if (senha) {
+            await rpc('certificado_senha_guardar', { p_loja_id: salvo.id, p_senha: senha });
+          }
         }
 
         fechar();
