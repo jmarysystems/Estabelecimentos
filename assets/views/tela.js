@@ -37,6 +37,7 @@ const CONFIG = {
       ] },
     { "campo": "cnae_principal", "rotulo": "CNAE principal", "aba": "Fiscal" },
     { "campo": "cnae_descricao", "rotulo": "Descrição do CNAE", "aba": "Fiscal" },
+    { "campo": "certificado_senha", "rotulo": "Senha do certificado (cofre)", "tipo": "cofre", "aba": "Fiscal" },
     { "campo": "certificado", "rotulo": "Certificado digital (.pfx / .p12)", "aba": "Fiscal",
       "tipo": "arquivo", "bucket": "certificados",
       "colunas": { "nome": "certificado_nome", "caminho": "certificado_caminho",
