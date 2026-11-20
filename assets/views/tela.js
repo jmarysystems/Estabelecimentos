@@ -7,6 +7,7 @@ const CONFIG = {
   "singular": "estabelecimento",
   "ordem": "nome",
   "filtro": "Nome, CNPJ ou cidade",
+  "cep": true,
   "colunas": [
     { "campo": "nome", "rotulo": "Razão social" },
     { "campo": "cnpj_cpf", "rotulo": "CNPJ/CPF", "classe": "mono" },
@@ -21,9 +22,26 @@ const CONFIG = {
     { "campo": "contato_nome", "rotulo": "Contato" },
     { "campo": "email", "rotulo": "E-mail", "tipo": "email" },
     { "campo": "whatsapp", "rotulo": "WhatsApp" },
-    { "campo": "cidade", "rotulo": "Cidade" },
-    { "campo": "estado", "rotulo": "Estado" },
-    { "campo": "ativa", "rotulo": "Ativo", "tipo": "check" }
+    { "campo": "codigo", "rotulo": "Código" },
+    { "campo": "ativa", "rotulo": "Ativo", "tipo": "check" },
+
+    { "campo": "cep", "rotulo": "CEP", "aba": "Localização" },
+    { "campo": "nome_endereco", "rotulo": "Nome da rua / avenida", "aba": "Localização" },
+    { "campo": "numero", "rotulo": "Número", "aba": "Localização" },
+    { "campo": "apartamento", "rotulo": "Apartamento", "aba": "Localização" },
+    { "campo": "bloco", "rotulo": "Bloco", "aba": "Localização" },
+    { "campo": "bairro", "rotulo": "Nome bairro", "aba": "Localização" },
+    { "campo": "complemento", "rotulo": "Complemento", "aba": "Localização" },
+    { "campo": "sigla_pais", "rotulo": "Sigla país", "aba": "Localização" },
+    { "campo": "codigo_ibge_pais", "rotulo": "Código IBGE país", "aba": "Localização" },
+    { "campo": "nome_pais", "rotulo": "Nome país", "aba": "Localização" },
+    { "campo": "sigla_estado", "rotulo": "Sigla estado", "aba": "Localização" },
+    { "campo": "codigo_ibge_estado", "rotulo": "Código IBGE estado", "aba": "Localização" },
+    { "campo": "estado", "rotulo": "Nome estado", "aba": "Localização" },
+    { "campo": "codigo_ibge_municipio", "rotulo": "Código IBGE município", "aba": "Localização" },
+    { "campo": "cidade", "rotulo": "Nome município", "aba": "Localização" },
+    { "campo": "latitude", "rotulo": "Latitude", "aba": "Localização" },
+    { "campo": "longitude", "rotulo": "Longitude", "aba": "Localização" }
   ]
 };
 
