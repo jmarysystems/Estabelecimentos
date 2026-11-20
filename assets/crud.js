@@ -1,6 +1,6 @@
 // Tela genérica de cadastro: lista, filtro, abas, formulário e exclusão.
-import { sb, listar, criar, atualizar, excluir, rpc } from './api.js';
-import * as ui from './ui.js';
+import { sb, listar, criar, atualizar, excluir, rpc } from './api.js?v=20261120a';
+import * as ui from './ui.js?v=20261120a';
 
 const rotuloDe = (listas, de, id) => {
   if (!de || !id) return '—';
@@ -314,6 +314,9 @@ export async function render(raiz, ctx, cfg) {
       const numericos = ['latitude', 'longitude'];
 
       for (const c of cfg.campos) {
+        // campos de arquivo e do cofre não são colunas da tabela
+        if (c.tipo === 'arquivo' || c.tipo === 'cofre' || c.semColuna) continue;
+
         if (c.tipo === 'check') {
           valores[c.campo] = !!ev.target.querySelector(`[name="${c.campo}"]`).checked;
         } else if (c.tipo === 'numero' || numericos.includes(c.campo)) {

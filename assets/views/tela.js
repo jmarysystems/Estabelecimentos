@@ -1,4 +1,4 @@
-import { render as base } from '../crud.js';
+import { render as base } from '../crud.js?v=20261120a';
 
 const CONFIG = {
   "titulo": "Estabelecimentos",
