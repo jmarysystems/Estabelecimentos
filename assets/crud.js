@@ -87,8 +87,12 @@ export async function render(raiz, ctx, cfg) {
     }
     if (c.tipo === 'arquivo') {
       const atual = registro[c.colunas?.nome || c.campo];
+      const senha = c.senha === false ? '' : `
+        <input type="password" name="${ui.esc(c.campo)}_senha"
+               placeholder="senha do certificado (usada só para ler a validade)">`;
       return `<label class="campo"><span>${ui.esc(c.rotulo)}${c.obrigatorio ? ' *' : ''}</span>
         <input type="file" name="${ui.esc(c.campo)}" data-arquivo="${ui.esc(c.campo)}">
+        ${senha}
         <small class="sub">${atual ? `Arquivo atual: ${ui.esc(atual)}` : 'Nenhum arquivo enviado'}</small>
       </label>`;
     }
@@ -317,10 +321,23 @@ export async function render(raiz, ctx, cfg) {
             .upload(caminho, arquivo, { upsert: true });
           if (erroUp) throw new Error(erroUp.message);
 
+          const senhaEl = ev.target.querySelector(`[name="${c.campo}_senha"]`);
+          const senha = senhaEl ? senhaEl.value : '';
+          let validade = null;
+          if (senha) {
+            try {
+              validade = await lerValidadeCertificado(arquivo, senha);
+            } catch (_) {
+              ui.toast('Não foi possível ler a validade (senha incorreta?).', 'erro');
+            }
+          }
+
           await atualizar(cfg.tabela, salvo.id, {
             [c.colunas?.nome || 'certificado_nome']: arquivo.name,
             [c.colunas?.caminho || 'certificado_caminho']: caminho,
             [c.colunas?.enviado || 'certificado_enviado_em']: new Date().toISOString(),
+            certificado_validade: validade,
+            certificado_enviado_por: ctx.perfil?.id || null,
           });
         }
 
@@ -348,4 +365,26 @@ export async function render(raiz, ctx, cfg) {
       } catch (erro) { ui.toast(erro.message, 'erro'); }
     });
   }
+}
+
+// ---------------------------------------------------------------------
+// Lê a validade do certificado .pfx/.p12 (a senha não é armazenada)
+// ---------------------------------------------------------------------
+async function lerValidadeCertificado(arquivo, senha) {
+  const forge = (await import('https://esm.sh/node-forge@1.3.1')).default;
+  const bytes = new Uint8Array(await arquivo.arrayBuffer());
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 1) bin += String.fromCharCode(bytes[i]);
+
+  const p12 = forge.pkcs12.pkcs12FromAsn1(forge.asn1.fromDer(bin), senha);
+  const bags = p12.getBags({ bagType: forge.pki.oids.certBag })[forge.pki.oids.certBag] || [];
+  if (!bags.length) return null;
+
+  let maior = null;
+  for (const bag of bags) {
+    const cert = bag.cert;
+    if (!cert || !cert.validity || !cert.validity.notAfter) continue;
+    if (!maior || cert.validity.notAfter > maior) maior = cert.validity.notAfter;
+  }
+  return maior ? maior.toISOString().slice(0, 10) : null;
 }
