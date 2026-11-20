@@ -198,6 +198,21 @@ export async function render(raiz, ctx, cfg) {
             preencher('longitude', coord.longitude);
           }
           if (d2.state) preencher('sigla_estado', d2.state);
+        } catch (_) { /* segue para o próximo serviço */ }
+
+        // se ainda não temos coordenadas, tenta o OpenStreetMap
+        try {
+          if (!campo('latitude')?.value) {
+            const endereco = [d.logradouro, d.bairro, d.localidade, d.uf, 'Brasil']
+              .filter(Boolean).join(', ');
+            const r3 = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='
+              + encodeURIComponent(endereco));
+            const lista = await r3.json();
+            if (lista && lista.length) {
+              preencher('latitude', Number(lista[0].lat).toFixed(6));
+              preencher('longitude', Number(lista[0].lon).toFixed(6));
+            }
+          }
         } catch (_) { /* coordenadas são opcionais */ }
 
         if (info) info.textContent = `${d.localidade}/${d.uf} — preenchido pelo CEP.`;
