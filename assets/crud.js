@@ -1,6 +1,6 @@
 // Tela genérica de cadastro: lista, filtro, abas, formulário e exclusão.
-import { sb, listar, criar, atualizar, excluir, rpc } from './api.js?v=20261120a';
-import * as ui from './ui.js?v=20261120a';
+import { sb, listar, criar, atualizar, excluir, rpc } from './api.js?v=20261120b';
+import * as ui from './ui.js?v=20261120b';
 
 const rotuloDe = (listas, de, id) => {
   if (!de || !id) return '—';
@@ -84,6 +84,19 @@ export async function render(raiz, ctx, cfg) {
           ${itens.map((i) => `<option value="${ui.esc(i.id)}" ${
             i.id === valor ? 'selected' : ''}>${ui.esc(i[c.de.rotulo])}</option>`).join('')}
         </select></label>`;
+    }
+    if (c.tipo === 'radio') {
+      const atual = valor || (c.padrao ?? '');
+      return `<div class="campo campo-largo"><span>${ui.esc(c.rotulo)}</span>
+        <div class="linha-acoes" style="flex-wrap:wrap;gap:16px">
+          ${c.opcoes.map((o) => `
+            <label class="linha-acoes" style="gap:6px;font-weight:400;cursor:pointer">
+              <input type="radio" name="${ui.esc(c.campo)}" value="${ui.esc(o.valor)}"
+                     ${String(o.valor) === String(atual) ? 'checked' : ''}
+                     data-radio="${ui.esc(c.campo)}">
+              ${ui.esc(o.rotulo)}
+            </label>`).join('')}
+        </div></div>`;
     }
     if (c.tipo === 'cofre') {
       return `<label class="campo"><span>${ui.esc(c.rotulo)}</span>
@@ -303,6 +316,25 @@ export async function render(raiz, ctx, cfg) {
       }
     }
 
+    // preenchimento automático ao trocar opções (ex.: ambiente)
+    for (const c of cfg.campos) {
+      if (!c.preenche) continue;
+      const radios = corpo.querySelectorAll(`[data-radio="${c.campo}"]`);
+      const aplicar = (valor) => {
+        const mapa = c.preenche[valor];
+        if (!mapa) return;
+        for (const [destino, conteudo] of Object.entries(mapa)) {
+          const el = corpo.querySelector(`[name="${destino}"]`);
+          if (el) el.value = conteudo;
+        }
+      };
+      for (const r of radios) {
+        r.addEventListener('change', () => { if (r.checked) aplicar(r.value); });
+      }
+      const marcado = Array.from(radios).find((r) => r.checked);
+      if (marcado) aplicar(marcado.value);
+    }
+
     corpo.querySelector('#busca-cnpj')?.addEventListener('click', buscarCnpj);
     corpo.querySelector('#busca-cep')?.addEventListener('click', buscarCep);
 
@@ -317,7 +349,10 @@ export async function render(raiz, ctx, cfg) {
         // campos de arquivo e do cofre não são colunas da tabela
         if (c.tipo === 'arquivo' || c.tipo === 'cofre' || c.semColuna) continue;
 
-        if (c.tipo === 'check') {
+        if (c.tipo === 'radio') {
+          const marcado = ev.target.querySelector(`[name="${c.campo}"]:checked`);
+          valores[c.campo] = marcado ? marcado.value : (c.padrao ?? null);
+        } else if (c.tipo === 'check') {
           valores[c.campo] = !!ev.target.querySelector(`[name="${c.campo}"]`).checked;
         } else if (c.tipo === 'numero' || numericos.includes(c.campo)) {
           valores[c.campo] = d[c.campo] ? Number(String(d[c.campo]).replace(',', '.')) : null;

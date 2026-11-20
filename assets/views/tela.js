@@ -1,4 +1,4 @@
-import { render as base } from '../crud.js?v=20261120a';
+import { render as base } from '../crud.js?v=20261120b';
 
 const CONFIG = {
   "titulo": "Estabelecimentos",
@@ -26,6 +26,25 @@ const CONFIG = {
     { "campo": "codigo", "rotulo": "Código" },
     { "campo": "ativa", "rotulo": "Ativo", "tipo": "check" },
 
+    { "campo": "ambiente", "rotulo": "Ambiente", "aba": "Fiscal", "tipo": "radio",
+      "padrao": "producao",
+      "preenche": {
+        "producao": { "ambiente_codigo": "1", "ambiente_descricao": "PRODUÇÃO" },
+        "homologacao": { "ambiente_codigo": "2", "ambiente_descricao": "HOMOLOGAÇÃO" }
+      },
+      "opcoes": [
+        { "valor": "producao", "rotulo": "Produção" },
+        { "valor": "homologacao", "rotulo": "Homologação" }
+      ] },
+    { "campo": "ambiente_codigo", "rotulo": "Código do ambiente", "aba": "Fiscal" },
+    { "campo": "ambiente_descricao", "rotulo": "Descrição do ambiente", "aba": "Fiscal" },
+    { "campo": "tipo_certificado", "rotulo": "Tipo de certificado", "aba": "Fiscal",
+      "tipo": "radio", "padrao": "A1",
+      "opcoes": [
+        { "valor": "A1", "rotulo": "A1" },
+        { "valor": "A3", "rotulo": "A3" },
+        { "valor": "Nuvem", "rotulo": "Nuvem" }
+      ] },
     { "campo": "regime_tributario", "rotulo": "Regime tributário", "aba": "Fiscal",
       "tipo": "opcoes", "vazio": "Selecione",
       "opcoes": [
